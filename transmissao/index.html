@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transmissão de selos</title>
+    <style type="text/css">
+        body {
+            text-align: center
+        }
+
+        #btFix {
+            display: block;
+            margin: 0 auto;
+            margin-top: 2.5vh;
+            height: 10vh;
+            width: 15vw;
+        }
+
+        #inSelos {
+            height: 10vh;
+            width: 50vw;
+            text-align: center
+        }
+
+        #divOut {
+            background-color: rgb(34,187,51);
+            padding: 3vh 15vw;
+        }
+
+        #divErr {
+            background-color: rgb(187,33,36);
+            color: white;
+            padding: 3vh 15vw;
+        }
+
+        #divSt {
+            background-color: rgb(212, 191, 72);
+            color: black;
+            text-align: left;
+            padding: 3vh 15vw;
+        }
+
+        #btCopy {
+            margin-top: 1vh;
+            margin-bottom: 1vh;
+        }
+    </style>
+</head>
+<body>
+    <input id="inSelos" type="text" placeholder="0365AB4016250, 0365AB4016349" />
+    <button id="btFix">FORMATAR</button>
+    <br>
+    <div id="divOut" hidden></div>
+    <br>
+    <div id="divErr" hidden></div>
+    <br>
+    <div id="divSt" hidden></div>
+    <button id="btCopy" hidden>Copiar Selos</button>
+    <script>
+        const inSelos = document.querySelector("#inSelos");
+        const btFix = document.querySelector("#btFix");
+        const divOut = document.querySelector("#divOut");
+        const divErr = document.querySelector("#divErr");
+        const btCopy = document.querySelector("#btCopy");
+        const divSt = document.querySelector("#divSt");
+
+        const statement = 'update firmas.fi_selo_distribuido s1\n' +
+            'set dt_transmissao_tj = dtUtilizacao\n' +
+            'from\n' +
+            '\t(select s2.id_selo_distribuido idSelo, s2.dt_utilizacao dtUtilizacao\n' +
+            '\tfrom firmas.fi_selo_distribuido s2\n' +
+            '\twhere s2.tx_num_selo in (_SELOS_)) as selos\n' +
+            'where s1.id_selo_distribuido = selos.idSelo;';
+
+        let baseStr;
+        let fixedStr;
+        let vSelos;
+        let xSelos;
+
+        btFix.addEventListener("click", function () {
+            if (checkStrSelos(inSelos.value)) {
+                baseStr = inSelos.value;
+                fixedStr = fixString(baseStr);
+                vSelos = vSelosDuplicados(fixedStr);
+                xSelos = xSelosNaoDuplicados(fixedStr, vSelos);
+                divOut.innerText = vSelos;
+                divErr.innerText = xSelos.length == 0 ? "" : xSelos.join("\n") + "\n\nSelos não duplicados.";
+                btCopy.hidden = vSelos.length == 0 ? true : false;
+                divOut.hidden = vSelos.length == 0 ? true : false;
+                divErr.hidden = xSelos.length == 0 ? true : false;
+                divSt.hidden = vSelos.length == 0 ? true : false;
+                divSt.innerText = statement.replace("_SELOS_", vSelos);
+            } else {
+
+            }
+        });
+
+        btCopy.addEventListener("click", function () {
+            let str = divSt.innerText;
+            navigator.clipboard.writeText(str)
+                .then(() => {
+                    divSt.style.backgroundColor = "rgb(144, 238, 144)";
+                    setTimeout(() => {
+                        divSt.style.backgroundColor = "";
+                    }, 300);
+                })
+                .catch(erro => console.error("Erro ao copiar:", erro));
+        });
+
+        function fixString(str) {
+            return str.length == 0 ? [] : str.split(", ").map(item => item.replace(/^(\d{4})([A-Z]+)(\d+)(\d)$/, "'$1.$2$3-$4'"));
+        }
+
+        function vSelosDuplicados(str) {
+            return [...new Set(str.filter(s => str.indexOf(s) !== str.lastIndexOf(s)))];
+        }
+
+        function xSelosNaoDuplicados(str1, str2) {
+            return str1.filter(v => !str2.includes(v));
+        }
+
+        function checkStrSelos(str) {
+            str = str.split(", ");
+            let ind = [];
+            const regex = "/^(\d{4})([A-Z]+)(\d+)(\d)$/";
+            str.forEach(function (s, i) {
+
+            });
+            if (ind.length > 0)
+
+                console.log(str);
+            return 1;
+        }
+
+    </script>
+</body>
+</html>
